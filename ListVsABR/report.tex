@@ -1,0 +1,315 @@
+\documentclass{article}
+\usepackage{float}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\geometry{ a4paper, total={170mm,257mm}, left=30mm, right=30mm, top=40mm, bottom=40mm }
+\usepackage{makecell}
+\usepackage{pbox}
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{\stretch{1}}
+\includegraphics[width=200px]{logo.png}
+\vspace*{\stretch{1}}
+{\Large \bf \\ Statistiche d'ordine dinamiche: 
+
+ABR vs Lista Ordinata \par}
+\vspace{10pt}
+{\bf \large Laboratorio di Algoritmi \\ 2023/2024 \par}
+\vspace{80pt}
+{Angeli Giovanni \par}
+\vspace{1cm}
+\vspace*{\stretch{2}}
+\end{titlepage}
+
+{\large\tableofcontents}
+
+\listoffigures
+
+\newpage\section{Introduzione}
+\large
+Lo scopo di questo esercizio è di confrontare varie implementazioni di statistiche d'ordine dinamiche attraverso strutture dati differenti ovvero lista ordinata e Alberi Binari di Ricerca (ABR) per capire quale delle alternative è più conveniente da utilizzare.
+Verranno eseguiti quindi dei test per valutare le prestazioni di OS-SELECT e OS-RANK, senza aumentare l'ABR con il campo size, per analizzarne vantaggi e svantaggi.
+
+\section{Spiegazione teorica del problema}
+In questa sezione si discuteranno le varie implementazioni mettendo a confronto la complessità temporale dei metodi citati sopra, che abbiamo studiato durante il corso di Algoritmi e Strutture Dati.
+\subsection{Strutture Dati}
+\begin{itemize}
+    \item \textit  {Lista Ordinata:}
+    \`E una struttura dati in cui gli elementi sono collegati tra loro tramite puntatori in modo che siano disposti in ordine crescente o decrescente. Ogni nodo contiene due campi uno per memorizzare il valore dell'elemento e un puntatore al successivo nodo nella sequenza.
+    
+    \item \textit {ABR:} 
+    \`E una struttura dati che ha un nodo come ``radice'' e ciascun nodo può avere fino a 2 figli (se non sono presenti il nodo si dice ``foglia''). L'albero rispetta le seguenti regole:
+    \begin{enumerate}
+    \item Il sotto-albero sinistro di un nodo x contiene soltanto i nodi con chiavi minori della chiave del nodo;
+    \item Il sotto-albero destro di un nodo x contiene soltanto i nodi con chiavi maggiori della chiave del nodo x;
+    \item Il sotto-albero destro e il sotto-albero sinistro devono essere entrambi due alberi binari di ricerca.
+    \end{enumerate}
+    
+\end{itemize}
+\subsection{Algoritmi analizzati}
+In sintesi vediamo le due operazioni aggiunte alle strutture dati per implementare le statistiche d'ordine dinamiche:
+\begin{itemize}
+    \item \textit  {OS-Select(x, i):} 
+    \' E una funzione che prende in ingresso un nodo  x, un intero i e ritorna il puntatore al nodo che contiene l’i-esima chiave più piccola del sottoalbero con radice in x. 
+    
+    \item \textit {OS-Rank(T, x):} 
+    Questa funzione prende in ingresso la struttura dati T, un nodo x e ritorna la posizione (rango) di x nell’ordine lineare determinato da un attraversamento inorder di T.
+\end{itemize}
+
+\subsection{Assunti e ipotesi}
+L'obiettivo è quello di implementare le due operazioni in un ABR senza aumentare la struttura dati.
+Per fare questo dobbiamo quindi eseguire un attraversamento in-order e contare quanti nodi sono stati trovati.
+Dalla teoria sappiamo che attraversare i nodi dell'albero scorrendo lungo tutta la struttura ha una complessità proporzionale al numero di nodi nell'albero, che è O(n).
+Questo si verifica sia al caso peggiore, che al caso medio
+
+Nella lista ordinata in ordine crescente invece richiederanno un tempo costante se l'elemento da selezionare è in testa alla lista. Se l'elemento è in coda dovremmo scorrere l'intera lista fino al nodo desiderato e quindi la complessità sarà O(n), dove n è il numero di elementi nella lista. Nel caso medio dobbiamo scorrere circa metà della lista, quindi la complessità sarà O(n/2), che si semplifica a O(n).
+Di seguito nelle Tabelle \ref{os_select_comp} e \ref{os_rank_comp} vengono mostrate le complessità temporali delle due operazioni nelle due diverse strutture dati
+\vspace{1cm}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+    \hline
+     & \textbf{Complessità al caso peggiore} & \textbf{Complessità al caso medio}\\
+    \hline
+    Lista ordinata & $O(n)$ & $O(n)$\\
+    \hline
+    ABR & $O(n)$ & $O(n)$\\
+    \hline
+    \end{tabular}
+    \caption{\textit{Complessità di OS-SELECT}}
+    \label{os_select_comp}
+\end{table}
+\vspace{0.5cm}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+    \hline
+     & \textbf{Complessità al caso peggiore} & \textbf{Complessità al caso medio}\\
+    \hline
+    Lista ordinata & $O(n)$ & $O(n)$\\
+    \hline
+    ABR & $O(n)$ & $O(n)$\\
+    \hline
+    \end{tabular}
+    \caption{\textit{Complessità di OS-RANK}}
+    \label{os_rank_comp}
+\end{table}
+\vspace{0.5cm}
+Secondo quando detto in precedenza confronteremo le due strutture dati nei loro casi medi, con l'obbiettivo di verificare le due implementazioni di statistiche d'ordine dinamiche
+\newpage
+\section{Documentazione del codice}
+\subsection{Schema del contenuto e delle interazioni fra i moduli}
+Come vediamo in Figura \ref{classdiag} le strutture dati necessarie per lo svolgimento degli esperimenti sono state implementate attraverso le classi LinkedList e ABR, che rappresentano una lista collegata ordinata e un albero binario di ricerca.
+Per l'utilizzo di queste due strutture dati sono fondamentali i nodi e quindi le classi Node e NodeABR. Node rappresenta il nodo della lista collegata e quindi come descritto nel capitolo 2.1 ha come attributi key, cioè il valore, e next che è un puntatore al nodo successivo.
+NodeABR è utilizzata come nodo per l'albero binario di ricerca e ha come key, left, right e parent. Questi ultimi tre sono puntatori al figlio sinistro, destro e al padre rispettivamente.
+I nodi si aggregano con le relative strutture dati(LinkedList e ABR), il primo per tenere traccia dell'elemento di testa della lista, il secondo della radice.
+Possiamo vedere che le classi Node e NodeABR hanno un vincolo di aggregazione ricorsivo di moltiplicita 1 e 3. Questo perchè un oggetto della classe Node deve avere un istanza del nodo successivo, per la classe NodeABR invece deve avere al suo interno le istanze del nodo padre e dei nodi figli destro e sinistro
+\begin{figure}[H]
+    \includegraphics[width= 430px]{class diagram.png}
+    \caption{\textit{Diagramma classi LinkedList e ABR}}
+    \label{classdiag}
+\end{figure}
+\newpage
+\subsection{Analisi delle scelte implementative}
+Il metodo \textit{add\_ordered} è stato utilizzato per mantenere la lista collegata con puntatori ordinata ad ogni inserimento.
+\subsection{Descrizione dei metodi implementati}
+In questa sezione vengono elencati e descritti brevementi i metodi visti prima:
+\begin{itemize}
+    \item \textbf{Node:} 
+    \begin{itemize}
+        \item get\_key(): Ritorna l'attributo key
+        \item get\_next(): Ritorna il puntatore al nodo successivo
+        \item set\_key(new\_key): Modifica l’attributo key con il valore del parametro new\_key
+        \item set\_next(new\_next): Modifica l’attributo next con il puntatore del parametro new\_next 
+    \end{itemize}
+    
+    \item \textbf {NodeABR: } 
+    \begin{itemize}
+        \item get(): Ritorna l'attributo key
+        \item set(key): Modifica l’attributo key con il valore del parametro key
+        \item get\_children(): Ritorna un array di nodi figli(sinistro e destro)
+    \end{itemize}
+    
+    \item \textbf{LinkedList: }
+    \begin{itemize}
+        \item is\_empty(): Controlla se la lista è vuota. Ritorna True se head è None altrimenti False
+        \item add\_ordered(item): Attraversa la lista finché non trova il punto di inserimento dell'elemento e lo inserisce mantenendo l'ordine
+        \item size(): ritorna la dimensione della lista attraversandola e contandone gli elementi
+        \item search(item): Scorre la lista finché non trova l'elemento item. Ritorna True se lo trova, altrimenti False
+        \item print\_list(): Stampa tutti gli elementi della lista 
+        \item find\_min\_ordered(): Ritorna il valore minimo nella lista ordinata. Se la lista è vuota, ritorna None
+        \item os\_select\_list(x, i): Restituisce il nodo alla posizione i partendo dal nodo x 
+        \item os\_rank\_list(T,x): Restituisce il rango del nodo x nella lista. Se il nodo non è presente nella lista, restituisce None
+    \end{itemize}
+    \newpage
+    \item \textbf{ABR: }
+    \begin{itemize}
+        \item set\_root(key):  Instanzia un oggetto NodeABR, con valore key, su root
+        \item insert\_node(current\_node, key): Attraversa ricorsivamente l’albero fino a che non trova una foglia libera. Quindi crea un istanza di NodeABR con valore key
+        \item insert(key): Se root è Nil chiama il metodo set\_root(key), altrimenti chiama il metodo insert\_node(current\_node, key)
+        \item find(key): Ritorna il valore di find\_node(self.root, key)
+        \item find\_node(current\_node, key): attraversa l’albero ricorsivamente, se trova un nodo con valore key allora ritorna TRUE altrimenti FALSE
+        \item inorder(): Attraversa ricorsivamente l'albero "in-order", stampando i valori dei nodi
+        \item \_inorder(v): Funzione di supporto per inorder(), attraversa ricorsivamente i sottoalberi sinistro e destro di un nodo, stampando il valore del nodo corrente
+        \item os\_select(x, i): Ritorna il nodo di rango i nell'albero con radice in x, attraversando l'albero in modo ricorsivo
+        \item os\_rank(T, x): Calcola e ritorna il rango del nodo x nell'albero T, risalendo il percorso verso la radice e considerando i ranghi dei nodi nei loro sottoalberi.
+        \item tree\_size(x): Calcola e ritorna la dimensione dell'albero con radice nel nodo x, eseguendo un attraversamento in-order
+    \end{itemize}
+\end{itemize}
+
+\section{Esperimenti effettuati ed Analisi dei risultati}
+\subsection{Specifiche della piattaforma di test}
+Le specifiche hardware della macchina sono:
+\begin{itemize}
+    \item \textbf{CPU: } Apple M1 8-core
+    \item \textbf{RAM: } Micron 8 GB LPDDR4
+    \item \textbf{SSD: } Apple 256GB
+\end{itemize}
+La piattaforma in cui il codice è stato scritto e testato è l’IDE PyCharm 2023.3.3 (Community Edition).
+Il sistema operativo è MacOS sonoma 14.2
+\subsection{Esperimenti condotti}
+I dati utilizzati per gli esperimenti sono liste ordinate e ABR con dimensioni crescenti, riempiti con valori interi casuali in un range da 0 alla dimensione delle strutture dati.
+Viene poi calcolato il tempo di esecuzione ogni 250 elementi inseriti.
+
+Ogni esperimento viene ripetuto 5 volte, dopo di che viene calcolata la media dei risultati. I dati vengono poi mostrati in tabelle e grafici generati dai test.
+\subsection{Misurazioni}
+Per calcolare i tempi di esecuzione e la media degli esperimenti è stata utilizzata la libreria \textbf{timeit} di python. (Esempio in Figura \ref{timeit_ex})
+Dove gli argomenti di timeit() sono:
+\begin{itemize}
+    \item lambda: struttura\_dati.algoritmo(): è una funzione lambda usata per creare un contesto di esecuzione per timeit, la quale chiama l'algoritmo implementato sulla struttura dati 
+    \item number=5 che specifica che la funzione verrà eseguita 5 volte e verrà calcolato il tempo medio di esecuzione
+ \end{itemize}
+Questa restituisce il tempo medio di un esperimento eseguito sull'algoritmo eseguito per 5 volte.
+\begin{figure}[H]
+\includegraphics[width= 400px]{timeit_use.png}
+\caption{\textit{Esempio uso timeit}}
+\label{timeit_ex}
+\end{figure}
+\newpage
+\subsection{Risultati degli esperimenti}
+In questa sezione vengono mostrati i risultati, sia in forma tabellare che con grafici.
+Le tabelle mostrano la relazione fra il numero di elementi delle strutture dati ed il tempo impiegato ad eseguire i due algoritmi.
+Nei grafici vediamo invece l'andamento nel tempo.
+\subsubsection{OS-Select}
+Dai test sull’ OS-Select sono stati estratti i dati presenti nella Tabella \ref{os_select_list} (per le liste) e nella Tabella \ref{os_select_ABR} (per gli ABR). In entrambi i casi i tempi medi di esecuzione sembrano crescere linearmente rispetto al numero degli elementi nelle due strutture dati. Questo è confermato dai Grafici \ref{select_listgra} e \ref{select_abrgra}.
+Attraverso i tempi di esecuzione si nota una minima differenza tra i tempi di esecuzione nel caso delle liste rispetto a quella degli ABR ma è poco rilevante ai fini dei test
+\begin{table}[H]
+    \begin{minipage}{.5\linewidth}
+    \centering
+    \begin{tabular}{l | l}
+    \multicolumn{2}{c}{OS-Select Lista ordinata} \\[0.5ex]
+    Elementi & Tempo (s)\\ [0.5ex]
+    \hline \hline
+    250 & $1.038*10^{-4}$ \\
+    500 & $2.247*10^{-4}$ \\
+    750 & $3.382*10^{-4}$ \\
+    1000 & $4.328*10^{-4}$ \\
+    1250 & $5.593*10^{-4}$ \\
+    1500 & $6.580*10^{-4}$ \\
+    1750 & $7.649*10^{-4}$ \\
+    2000 & $8.798*10^{-4}$ \\
+\end{tabular}
+      \caption{\textit{Tempo di esecuzione OS-Select su lista ordinata all'aumentare del numero di elementi}}
+      \label{os_select_list}
+    \end{minipage}%
+    \hspace{10pt}
+    \begin{minipage}{.5\linewidth}
+      \centering
+        \begin{tabular}{l | l}
+        \multicolumn{2}{c}{OS-Select ABR} \\[0.5ex]
+    Elementi & Tempo (s)\\ [0.5ex]
+    \hline \hline
+    250 & $2.292*10^{-4}$  \\
+    500 & $4.800*10^{-4}$  \\
+    750 & $6.369*10^{-4}$  \\
+    1000 & $8.593*10^{-4}$  \\
+    1250 & $1.059*10^{-3}$  \\
+    1500 & $1.295*10^{-3}$ \\
+    1750 & $1.552*10^{-3}$ \\
+    2000 & $1.761*10^{-3}$ \\
+\end{tabular}
+        \caption{\textit{Tempo di esecuzione OS-Select su ABR all'aumentare del numero di elementi}}
+        \label{os_select_ABR}
+    \end{minipage} 
+\end{table}
+\begin{figure}[H]
+    \begin{minipage}{.5\linewidth}
+      \centering
+            \includegraphics[width=230px]{osselect_list.png}
+      \caption{\textit{Grafico Tabella \ref{os_select_list}: tempo impiegato al variare del numero di nodi}}
+      \label{select_listgra}
+    \end{minipage}%
+    \hspace{10pt}
+    \begin{minipage}{.5\linewidth}
+      \centering
+            \includegraphics[width=230px]{osselect_abr.png}
+        \caption{\textit{Grafico Tabella \ref{os_select_ABR}: tempo impiegato al variare del numero di nodi}}
+        \label{select_abrgra}
+    \end{minipage} 
+\end{figure}
+\newpage
+\subsubsection{OS-Rank}
+Anche per OS-Rank i risultati sono simili ed evidenziano un andamento lineare del tempo come possiamo vedere nei Grafici \ref{rank_listgra} e \ref{rank_abrgra}.
+Si può notare un leggero aumento nei tempi delle Tabelle \ref{os_rank_list} e \ref{os_rank_ABR} rispetto a quelle precedenti ma potrebbe essere dovuto ad un rallentamento della macchina durante l'esecuzione dei test o imprecisioni durante le misurazioni dei tempi
+\begin{table}[H]
+    \begin{minipage}{.5\linewidth}
+    \centering
+    \begin{tabular}{l | l}
+    \multicolumn{2}{c}{OS-Rank Lista ordinata} \\[0.5ex]
+    Elementi & Tempo (s)\\ [0.5ex]
+    \hline \hline
+    250 & $2.009*10^{-4}$ \\
+    500 & $4.402*10^{-4}$ \\
+    750 & $6.969*10^{-4}$ \\
+    1000 & $8.946*10^{-4}$ \\
+    1250 & $1.106*10^{-3}$ \\
+    1500 & $1.366*10^{-3}$ \\
+    1750 & $1.579*10^{-3}$ \\
+    2000 & $1.802*10^{-3}$ \\
+\end{tabular}
+      \caption{\textit{Tempo di esecuzione OS-Rank su lista ordinata all'aumentare del numero di elementi}}
+      \label{os_rank_list}
+    \end{minipage}%
+    \hspace{10pt}
+    \begin{minipage}{.5\linewidth}
+      \centering
+        \begin{tabular}{l | l}
+        \multicolumn{2}{c}{OS-Rank ABR} \\[0.5ex]
+    Elementi & Tempo (s)\\ [0.5ex]
+    \hline \hline
+    250 & $4.028*10^{-4}$ \\
+    500 & $8.573*10^{-4}$ \\
+    750 & $1.282*10^{-3}$ \\
+    1000 & $1.673*10^{-3}$ \\
+    1250 & $2.270*10^{-3}$ \\
+    1500 & $2.528*10^{-3}$ \\
+    1750 & $2.958*10^{-3}$ \\
+    2000 & $3.485*10^{-3}$ \\
+\end{tabular}
+        \caption{\textit{Tempo di esecuzione OS-Rank su ABR all'aumentare del numero di elementi}}
+        \label{os_rank_ABR}
+    \end{minipage} 
+\end{table}
+\begin{figure}[H]
+    \begin{minipage}{.5\linewidth}
+      \centering
+            \includegraphics[width=230px]{osrank_list.png}
+      \caption{\textit{Grafico Tabella \ref{os_rank_list}: tempo impiegato al variare del numero di nodi}}
+      \label{rank_listgra}
+    \end{minipage}%
+    \hspace{10pt}
+    \begin{minipage}{.5\linewidth}
+      \centering
+            \includegraphics[width=230px]{osrank_abr.png}
+        \caption{\textit{Grafico Tabella \ref{os_rank_ABR}: tempo impiegato al variare del numero di nodi}}
+        \label{rank_abrgra}
+    \end{minipage} 
+\end{figure}
+
+\section{Conclusioni}
+I risultati dei test confermano le ipotesi iniziali e quindi una complessità temporale O(n) e quindi possiamo concludere che non ci sono differenze tra utilizzare ABR o liste ordinate per implementare statistiche d'ordine dinamiche, a meno che non aumentiamo la struttura dati ABR aggiungendo un campo size che renderebbe costante (O(1)) il calcolo delle dimensioni dell'albero
+\end{document}
+
